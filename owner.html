@@ -15,8 +15,13 @@
 <div class="card"><h2>Phase 22 question bank</h2><p>This import is needed only for the new D1 database. Select the supplied <code>question_bank_phase22_v1.json</code>.</p><input id="bankFile" type="file" accept="application/json,.json"><br><br><button id="importBankBtn" class="secondary">Import / update bank</button><div class="progress" style="margin-top:14px"><div id="importBar"></div></div><p id="importMsg" class="small muted"></p><div id="bankDist"></div></div>
 </div>
 
-<div class="card"><div class="row between"><h2>Assessment requests</h2><div class="row"><button id="hideReqBtn" class="ghost">Hide selected</button><button id="refreshBtn" class="ghost">Refresh</button></div></div><div class="tablewrap"><table><thead><tr><th></th><th>ID</th><th>Candidate</th><th>Rank</th><th>Status</th><th>Created</th><th>Action</th></tr></thead><tbody id="requestsBody"></tbody></table></div></div>
-<div class="card"><div class="row between"><h2>Recent assessments</h2><button id="hideExamBtn" class="ghost">Hide selected</button></div><div class="tablewrap"><table><thead><tr><th></th><th>Exam</th><th>Candidate</th><th>Rank</th><th>Status</th><th>Score</th><th>Integrity</th><th>Action</th></tr></thead><tbody id="examsBody"></tbody></table></div></div>
+<div class="card"><div class="row between"><h2 id="requestsTitle">Assessment requests</h2><div class="row"><button id="hideReqBtn" class="ghost">Hide selected</button><button id="archiveBtn" class="ghost">Show hidden</button><button id="refreshBtn" class="ghost">Refresh</button></div></div><div class="tablewrap"><table><thead><tr><th></th><th>ID</th><th>Candidate</th><th>Rank</th><th>Status</th><th>Created</th><th>Action</th></tr></thead><tbody id="requestsBody"></tbody></table></div></div>
+<div class="card"><div class="row between"><h2 id="examsTitle">Recent assessments</h2><button id="hideExamBtn" class="ghost">Hide selected</button></div><div class="tablewrap"><table><thead><tr><th></th><th>Exam</th><th>Candidate</th><th>Rank</th><th>Status</th><th>Score</th><th>Integrity</th><th>Action</th></tr></thead><tbody id="examsBody"></tbody></table></div></div>
+<div id="archivePager" class="row hidden">
+  <button id="archivePrevBtn" type="button" class="ghost">Previous page</button>
+  <span id="archivePageLabel" aria-live="polite"></span>
+  <button id="archiveNextBtn" type="button" class="ghost">Next page</button>
+</div>
 <div id="invitationCard" class="card hidden"><h2>Candidate invitation</h2><div id="invitationText"></div><div class="row" style="margin-top:14px"><button id="copyInviteBtn">Copy invitation</button><a id="mailInviteBtn" class="btn secondary" href="#">Open email app</a></div></div>
 <div id="detailCard" class="card hidden">
   <div class="row between">
