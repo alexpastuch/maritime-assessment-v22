@@ -18,6 +18,15 @@
 <div class="card"><div class="row between"><h2>Assessment requests</h2><div class="row"><button id="hideReqBtn" class="ghost">Hide selected</button><button id="refreshBtn" class="ghost">Refresh</button></div></div><div class="tablewrap"><table><thead><tr><th></th><th>ID</th><th>Candidate</th><th>Rank</th><th>Status</th><th>Created</th><th>Action</th></tr></thead><tbody id="requestsBody"></tbody></table></div></div>
 <div class="card"><div class="row between"><h2>Recent assessments</h2><button id="hideExamBtn" class="ghost">Hide selected</button></div><div class="tablewrap"><table><thead><tr><th></th><th>Exam</th><th>Candidate</th><th>Rank</th><th>Status</th><th>Score</th><th>Integrity</th><th>Action</th></tr></thead><tbody id="examsBody"></tbody></table></div></div>
 <div id="invitationCard" class="card hidden"><h2>Candidate invitation</h2><div id="invitationText"></div><div class="row" style="margin-top:14px"><button id="copyInviteBtn">Copy invitation</button><a id="mailInviteBtn" class="btn secondary" href="#">Open email app</a></div></div>
-<div id="detailCard" class="card hidden"><div class="row between"><h2>Assessment detail</h2><button id="closeDetailBtn" class="ghost">Close</button></div><div id="detailContent"></div></div>
+<div id="detailCard" class="card hidden">
+  <div class="row between">
+    <h2>Assessment detail</h2>
+    <div class="row report-actions">
+      <button id="printDetailBtn" type="button">Save as PDF</button>
+      <button id="closeDetailBtn" type="button" class="ghost">Close</button>
+    </div>
+  </div>
+  <div id="detailContent"></div>
+</div>
 </section>
 </main><script src="owner.js"></script><script>if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});</script></body></html>

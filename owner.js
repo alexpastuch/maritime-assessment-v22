@@ -22,12 +22,57 @@ async function approveReq(id){const code=prompt('Enter a FRESH 6-digit Authentic
 async function rejectReq(id){const code=prompt('Enter a fresh 6-digit Authenticator code to reject this request.');if(!code)return;try{await api(`/api/owner/requests/${id}/reject`,{method:'POST',body:JSON.stringify({code})});await refresh();}catch(e){alert(e.message)}}
 async function showInvite(id,prefetched=null){try{const j=prefetched||await api(`/api/owner/exams/${encodeURIComponent(id)}/invitation`);const text=`Maritime Competency Assessment Invitation\n\nCandidate: ${j.candidate_name}\nRank: ${j.rank}\n\nOpen this portal on the computer or iPad where you will take the assessment:\n${j.portal_url||PORTAL}\n\nInvitation Code: ${j.invitation_code}\n\nThe assessment becomes available only after computer verification.`;lastInvite=text;$('invitationText').innerHTML=`<p><b>${esc(j.candidate_name)}</b> · ${esc(j.rank)}</p><p>Portal: <a href="${PORTAL}" target="_blank">${PORTAL}</a></p><div class="codebox">${esc(j.invitation_code)}</div>`;$('invitationCard').classList.remove('hidden');$('mailInviteBtn').href=`mailto:${encodeURIComponent(j.candidate_email||'')}?subject=${encodeURIComponent('Maritime Competency Assessment Invitation')}&body=${encodeURIComponent(text)}`;$('invitationCard').scrollIntoView({behavior:'smooth'});}catch(e){alert(e.message)}}
 $('copyInviteBtn').onclick=async()=>{if(lastInvite){await navigator.clipboard.writeText(lastInvite);$('copyInviteBtn').textContent='Copied';setTimeout(()=>$('copyInviteBtn').textContent='Copy invitation',1500)}};
-async function viewExam(id){try{const j=await api(`/api/owner/exams/${encodeURIComponent(id)}`),e=j.exam,qs=j.questions||[],ev=j.events||[];$('detailContent').innerHTML=`<div class="grid3"><div class="metric">Status<b>${esc(e.status)}</b></div><div class="metric">Score<b>${e.score_percent==null?'—':e.score_percent+'%'}</b></div><div class="metric">Result<b>${esc(e.result||'—')}</b></div></div><p><b>${esc(e.candidate_name)}</b> · ${esc(e.rank)}</p><p>Focus losses: ${e.focus_loss_count||0} · Focus seconds: ${Math.round(e.focus_loss_seconds||0)} · Copy attempts: ${e.copy_attempts||0}</p><div class="tablewrap"><table><thead><tr><th>#</th><th>Question</th><th>Candidate</th><th>Correct</th><th>Time</th></tr></thead><tbody>${qs.map(q=>`<tr><td>${q.sequence_no}</td><td>${esc(q.question_text)}</td><td>${esc(q.candidate_answer||'—')}</td><td>${esc(q.correct_display)}</td><td>${q.response_seconds==null?'—':Math.round(q.response_seconds)+'s'}</td></tr>`).join('')}</tbody></table></div><p class="small muted">Integrity events: ${ev.length}</p>`;$('detailCard').classList.remove('hidden');$('detailCard').scrollIntoView({behavior:'smooth'});}catch(e){alert(e.message)}}
+function answerOptions(question, selection, emptyLabel) {
+  const letters = new Set(String(selection ?? '').toUpperCase().match(/[A-D]/g) || []);
+  if (!letters.size) return esc(emptyLabel);
+  return `<ul class="report-options">${Array.from(letters, letter => {
+    const option = question['option_' + letter.toLowerCase()];
+    return `<li><b>${letter}.</b> ${esc(option ?? 'Answer text unavailable')}</li>`;
+  }).join('')}</ul>`;
+}
+
+async function viewExam(id) {
+  try {
+    const { exam, questions = [], events = [] } = await api(`/api/owner/exams/${encodeURIComponent(id)}`);
+    const score = exam.score_percent == null ? '—' :
+      `${exam.score_correct}/${exam.question_count ?? questions.length} · ${exam.score_percent}%`;
+    const rows = questions.map(question => `
+      <tr>
+        <td>${esc(question.sequence_no)}</td>
+        <td>${esc(question.question_text)}</td>
+        <td>${answerOptions(question, question.candidate_answer, 'No answer recorded')}</td>
+        <td>${answerOptions(question, question.correct_display, '—')}</td>
+        <td>${question.response_seconds == null ? '—' : Math.round(question.response_seconds) + ' s'}</td>
+      </tr>`).join('');
+
+    $('detailContent').innerHTML = `
+      <div class="grid3 report-metrics">
+        <div class="metric">Status<b>${esc(exam.status)}</b></div>
+        <div class="metric">Score<b>${esc(score)}</b></div>
+        <div class="metric">Result<b>${esc(exam.result || '—')}</b></div>
+      </div>
+      <p><b>${esc(exam.candidate_name)}</b> · ${esc(exam.rank)} · Exam ID: ${esc(exam.id)}</p>
+      <p>Started: ${esc(fmt(exam.started_at))} · Submitted: ${esc(fmt(exam.submitted_at))} · Pass mark: ${esc(exam.pass_mark_percent ?? 70)}%</p>
+      <p>Focus losses: ${esc(exam.focus_loss_count ?? 0)} · Focus seconds: ${Math.round(exam.focus_loss_seconds || 0)} · Copy attempts: ${esc(exam.copy_attempts ?? 0)} · Integrity events: ${events.length}</p>
+      <div class="tablewrap report-table-wrap">
+        <table class="report-table">
+          <colgroup><col class="report-number"><col><col class="report-answer"><col class="report-answer"><col class="report-time"></colgroup>
+          <thead><tr><th scope="col">#</th><th scope="col">Question</th><th scope="col">Candidate answer</th><th scope="col">Correct answer</th><th scope="col">Time</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+    $('detailCard').classList.remove('hidden');
+    $('detailCard').scrollIntoView({ behavior: 'smooth' });
+  } catch (error) {
+    alert(error.message);
+  }
+}
 
 async function resetPairing(id){const code=prompt('Enter a fresh Authenticator code to reset computer verification.');if(!code)return;try{await api(`/api/owner/exams/${encodeURIComponent(id)}/reset-pairing`,{method:'POST',body:JSON.stringify({code})});await refresh();}catch(e){alert(e.message)}}
 async function invalidateExam(id){if(!confirm('Invalidate this assessment? It will no longer be usable.'))return;const code=prompt('Enter a fresh Authenticator code.');if(!code)return;try{await api(`/api/owner/exams/${encodeURIComponent(id)}/invalidate`,{method:'POST',body:JSON.stringify({code})});await refresh();}catch(e){alert(e.message)}}
 async function hideSelected(kind){const cls=kind==='requests'?'.reqHide:checked':'.examHide:checked',vals=[...document.querySelectorAll(cls)].map(x=>x.value);if(!vals.length){alert('Select at least one item.');return}const code=prompt('Enter a fresh Authenticator code to hide the selected items from the dashboard.');if(!code)return;try{await api('/api/owner/hide',{method:'POST',body:JSON.stringify({code,request_ids:kind==='requests'?vals:[],exam_ids:kind==='exams'?vals:[]})});await refresh();}catch(e){alert(e.message)}}
 $('hideReqBtn').onclick=()=>hideSelected('requests');$('hideExamBtn').onclick=()=>hideSelected('exams');
 $('closeDetailBtn').onclick=()=>$('detailCard').classList.add('hidden');
+$('printDetailBtn').onclick = () => window.print();
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function escAttr(s){return String(s??'').replace(/'/g,"\\'")}
 if(token){showApp(true);refresh()}else showApp(false);
