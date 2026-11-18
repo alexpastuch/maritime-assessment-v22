@@ -4,6 +4,7 @@ const $=id=>document.getElementById(id);
 let token=sessionStorage.getItem('mae_owner_token')||'';
 let lastInvite='';
 const DASHBOARD_PAGE_SIZE = 100;
+const FOCUS_REVIEW_PERCENT = 2;
 const tables = {
   requests: {title:'Assessment requests', hiddenTitle:'Hidden requests', render:renderRequests, page:0, load:0},
   exams: {title:'Recent assessments', hiddenTitle:'Hidden assessments', render:renderExams, page:0, load:0},
@@ -97,6 +98,12 @@ async function viewExam(id) {
     const { exam, questions = [], events = [] } = await api(`/api/owner/exams/${encodeURIComponent(id)}`);
     const score = exam.score_percent == null ? '—' :
       `${exam.score_correct}/${exam.question_count ?? questions.length} · ${exam.score_percent}%`;
+    const recordedFocusSeconds = Number(exam.focus_loss_seconds);
+    const focusSeconds = Number.isFinite(recordedFocusSeconds) ? Math.max(0, Math.floor(recordedFocusSeconds)) : 0;
+    const allowedMinutes = Number(exam.duration_minutes);
+    const reviewThreshold = Math.ceil(allowedMinutes * 60 * FOCUS_REVIEW_PERCENT / 100);
+    const needsIntegrityReview = exam.status === 'CLOSED' && Number.isFinite(reviewThreshold) &&
+      reviewThreshold > 0 && focusSeconds >= reviewThreshold;
     const rows = questions.map(question => `
       <tr>
         <td>${esc(question.sequence_no)}</td>
@@ -114,7 +121,11 @@ async function viewExam(id) {
       </div>
       <p><b>${esc(exam.candidate_name)}</b> · ${esc(exam.rank)} · Exam ID: ${esc(exam.id)}</p>
       <p>Started: ${esc(fmt(exam.started_at))} · Submitted: ${esc(fmt(exam.submitted_at))} · Pass mark: ${esc(exam.pass_mark_percent ?? 70)}%</p>
-      <p>Focus losses: ${esc(exam.focus_loss_count ?? 0)} · Focus seconds: ${Math.round(exam.focus_loss_seconds || 0)} · Copy attempts: ${esc(exam.copy_attempts ?? 0)} · Integrity events: ${events.length}</p>
+      <p>Focus losses: ${esc(exam.focus_loss_count ?? 0)} · Focus seconds: ${focusSeconds} · Copy attempts: ${esc(exam.copy_attempts ?? 0)} · Integrity events: ${events.length}</p>
+      ${needsIntegrityReview ? `<div class="notice warn">
+        <strong>Integrity review required</strong>
+        <p>Recorded focus loss reached the review threshold of ${reviewThreshold} s (${FOCUS_REVIEW_PERCENT}% of the allotted time).</p>
+      </div>` : ''}
       <div class="tablewrap report-table-wrap">
         <table class="report-table">
           <colgroup><col class="report-number"><col><col class="report-answer"><col class="report-answer"><col class="report-time"></colgroup>
